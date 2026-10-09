@@ -1,0 +1,8 @@
+#!/bin/bash
+# commit-msg hook - reject commit messages carrying LLM attributions
+#
+# Install: cp hooks/commit-msg .git/hooks/commit-msg && chmod +x .git/hooks/commit-msg
+if grep -qi "Generated with \[Claude Code\]\|Co-Authored-By: Claude\|Claude" "$1"; then
+    echo "ERROR: commit message contains an LLM attribution"; exit 1
+fi
+exit 0

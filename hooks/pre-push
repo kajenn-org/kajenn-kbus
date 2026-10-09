@@ -1,0 +1,13 @@
+#!/bin/bash
+# pre-push hook - run the test suite before pushing
+#
+# Install: cp hooks/pre-push .git/hooks/pre-push && chmod +x .git/hooks/pre-push
+# Skip:    SKIP_TESTS=1 git push   (use with caution, say why in the PR)
+
+set -e
+if [ "$SKIP_TESTS" = "1" ]; then
+    echo "SKIP_TESTS=1: skipping pre-push tests"
+    exit 0
+fi
+echo "Running pre-push checks: pytest tests/"
+pytest tests/ -q

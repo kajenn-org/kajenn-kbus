@@ -1,0 +1,25 @@
+#!/bin/bash
+# pre-commit hook - Run code quality checks before commit
+#
+# Install: cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+#
+#   1. ruff check  - Linting       (BLOCKS the commit on failure)
+#   2. mypy        - Type checking (ADVISORY only, never blocks)
+
+set -e
+
+echo "Running pre-commit checks..."
+
+echo "  [1/2] Running ruff..."
+if ! ruff check src/ tests/; then
+    echo "  ❌ FAILED: ruff found issues"
+    exit 1
+fi
+echo "  ✅ PASSED: ruff"
+
+echo "  [2/2] Running mypy (advisory)..."
+if mypy src/ --ignore-missing-imports; then
+    echo "  ✅ mypy: no issues"
+else
+    echo "  ⚠️  mypy reported issues above — ADVISORY ONLY, commit not blocked"
+fi

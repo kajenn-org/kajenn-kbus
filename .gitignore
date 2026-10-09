@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+.env/
+
+# Testing & coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Type checking
+.mypy_cache/
+.ruff_cache/
+
+# Editors
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+.DS_Store
+
+# Temporary files
+temp/
+
+# Sphinx documentation build output
+docs/_build/
+.mkdocs/site/
+
+# Package metadata
+src/*.egg-info/
+
+# Secondary git worktrees (convention: never committed from here)
+worktrees/
+
+# Subtasks (convention: never committed)
+.subtasks/
