@@ -1,0 +1,11 @@
+/* Keep narrative code quiet; reserve red for actual errors. */
+.rst-content :not(pre) > code.literal {
+  color: #34465a;
+  background: #f3f5f7;
+  border: 0;
+  border-radius: 3px;
+  padding: 2px 4px;
+}
+/* Wide tables wrap instead of hiding their explanation off-screen. */
+.wy-table-responsive table td,
+.wy-table-responsive table th { white-space: normal; }

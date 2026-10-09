@@ -1,5 +1,13 @@
 # kbus
 
+[![Tests](https://github.com/kajenn-org/kajenn-kbus/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/kajenn-org/kajenn-kbus/actions/workflows/tests.yml)
+[![Codecov](https://codecov.io/gh/kajenn-org/kajenn-kbus/branch/main/graph/badge.svg)](https://app.codecov.io/gh/kajenn-org/kajenn-kbus)
+[![Documentation](https://readthedocs.org/projects/kajenn-kbus/badge/?version=latest)](https://kajenn-kbus.readthedocs.io/en/latest/)
+[![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://github.com/kajenn-org/kajenn-kbus/blob/main/pyproject.toml)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/kajenn-org/kajenn-kbus/blob/main/LICENSE)
+
+**Status**: Pre-Alpha · version 0.1.0.dev0, not yet on PyPI.
+
 Move messages between parts of an application that may live in the same
 process, in other processes on the same machine, or on other machines. The
 calling code is the same in all three cases. Where a part runs is decided at

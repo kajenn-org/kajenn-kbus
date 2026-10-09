@@ -44,10 +44,16 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0",
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=2.0",
+    "myst-parser>=2.0",
+]
 
 [project.urls]
 Repository = "https://github.com/kajenn-org/kajenn-kbus"
 "Bug Tracker" = "https://github.com/kajenn-org/kajenn-kbus/issues"
+Documentation = "https://kajenn-kbus.readthedocs.io/en/latest/"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kbus"]

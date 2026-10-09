@@ -17,6 +17,7 @@ jobs:
         python-version: ['3.11', '3.12', '3.13']
     permissions:
       contents: read
+      id-token: write
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -35,4 +36,13 @@ jobs:
         run: ruff check src/ tests/
 
       - name: Tests
-        run: pytest tests/
+        run: pytest tests/ --cov-report=xml:coverage.xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5
+        with:
+          use_oidc: true
+          files: ./coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
