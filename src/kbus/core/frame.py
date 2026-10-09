@@ -45,13 +45,22 @@ class FrameCodec:
                 f"frame of {meta_len + payload_len} bytes over max_frame {self.limits.max_frame}"
             )
 
+    def check_route(self, meta: dict, error: type) -> None:
+        """Raise ``error`` when ``meta["route"]`` exceeds this side's ``max_route``."""
+        route_len = len(meta.get("route", "").encode())
+        if route_len > self.limits.max_route:
+            raise error(f"route of {route_len} bytes over max_route {self.limits.max_route}")
+
     def check_outgoing(self, message: Message) -> None:
+        self.check_route(message.meta, FrameTooLarge)
         self.check(len(self.encode_meta(message.meta)), len(message.payload), FrameTooLarge)
 
     def check_incoming(self, message: Message) -> None:
+        self.check_route(message.meta, ProtocolError)
         self.check(len(self.encode_meta(message.meta)), len(message.payload), ProtocolError)
 
     def encode(self, message: Message) -> bytes:
+        self.check_route(message.meta, FrameTooLarge)
         meta = self.encode_meta(message.meta)
         self.check(len(meta), len(message.payload), FrameTooLarge)
         return HEADER.pack(MAGIC, VERSION, len(meta), len(message.payload)) + meta + message.payload
@@ -77,4 +86,5 @@ class FrameCodec:
             raise ProtocolError(f"meta is not valid JSON: {exc}") from exc
         if not isinstance(meta, dict):
             raise ProtocolError("meta is not a JSON object")
+        self.check_route(meta, ProtocolError)
         return make_message(meta, body[meta_len:])

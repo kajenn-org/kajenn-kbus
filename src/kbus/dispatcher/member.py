@@ -13,6 +13,7 @@
 # limitations under the License.
 """A named participant connected to a dispatcher."""
 
+import copy
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
 from typing import Any
@@ -125,7 +126,7 @@ class Member:
 
     async def observe(self, reply: Message) -> None:
         for hook in self._reply_hooks:
-            await hook(dict(reply.meta))
+            await hook(copy.deepcopy(reply.meta))
 
     async def serve(self, message: Message, second: Any) -> None:
         """Forward to a member of the nested dispatcher, or hand to the handler."""

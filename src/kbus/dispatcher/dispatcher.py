@@ -54,6 +54,8 @@ class Dispatcher:
         self._acceptors: list = []
         self._listeners: list = []
         self._tasks = Tasks()
+        # Closes started by a member's goodbye: close() awaits them, never cancels them.
+        self._closing = Tasks()
         self._message_hooks: list[Callable[[dict], Awaitable[None]]] = []
         self._disconnect_hooks: list[Callable[[str, Exception | None], Awaitable[None]]] = []
 
@@ -127,7 +129,7 @@ class Dispatcher:
                 if name is None:
                     raise Rejected("not admitted")
                 del self._members[name]
-                self._tasks.spawn(connection.close())
+                self._closing.spawn(connection.close())
 
         async def watch() -> None:
             reason = await connection.wait_closed()
@@ -144,7 +146,7 @@ class Dispatcher:
         self._tasks.spawn(watch())
 
     def admit(self, name: str, secret: str, connection: Connection) -> None:
-        if self.secrets.get(name) != secret:
+        if name not in self.secrets or self.secrets[name] != secret:
             raise Rejected(f"unknown name or wrong secret for {name!r}")
         if name in self._members:
             raise Rejected(f"name {name!r} already in use")

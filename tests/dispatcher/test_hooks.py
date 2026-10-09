@@ -70,6 +70,21 @@ async def test_on_reply_sees_every_reply_before_the_caller(members):
     assert order == [("hook", 1), ("caller", 1)]
 
 
+async def test_on_reply_cannot_change_nested_meta(members):
+    async def nested(message, reply):
+        await reply.send(kbus.Message(meta={"data": {"x": 1}}))
+
+    await members("billing", nested)
+    shop = await members("shop")
+
+    @shop.on_reply
+    async def tamper(meta):
+        meta["data"]["x"] = 999
+
+    reply = await shop.call("billing.total", kbus.Message())
+    assert reply.meta["data"] == {"x": 1}
+
+
 async def test_on_disconnect_reports_name_and_reason(dispatcher, attach):
     gone = asyncio.Queue()
 

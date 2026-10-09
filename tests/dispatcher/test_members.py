@@ -99,6 +99,20 @@ async def test_unknown_name_is_rejected(attach):
         await member.connect(attach)
 
 
+async def test_unknown_name_without_secret_is_rejected(attach):
+    member = kbus.Member("ghost", secret=None, handler=None)
+    with pytest.raises(kbus.Rejected):
+        await member.connect(attach)
+
+
+async def test_dispatcher_closes_right_after_a_member_closes(dispatcher, attach):
+    billing = kbus.Member("billing", secret="b-secret", handler=None)
+    await billing.connect(attach)
+    await billing.close()
+    async with asyncio.timeout(5):
+        await dispatcher.close()
+
+
 async def test_name_in_use_is_rejected_until_disconnect(attach, members):
     first = await members("shop")
     second = kbus.Member("shop", secret="s-secret", handler=None)
@@ -157,6 +171,48 @@ async def test_inproc_member_uses_dispatcher_limits(placement, tmp_path):
         await shop.call("billing.x", kbus.Message())
     assert started == [1]
     first.cancel()
+    await shop.close()
+    await billing.close()
+    await dispatcher.close()
+
+
+async def test_route_over_max_route_is_not_sent(members):
+    seen = []
+
+    async def handler(message, reply):
+        seen.append(message)
+        await reply.send(kbus.Message())
+
+    await members("billing", handler)
+    shop = await members("shop", limits=kbus.Limits(max_route=16))
+    with pytest.raises(kbus.FrameTooLarge):
+        await shop.call("billing." + "x" * 100, kbus.Message())
+    await shop.call("billing.total", kbus.Message())
+    assert len(seen) == 1
+
+
+async def test_route_over_max_route_on_receive_closes_the_connection(placement, tmp_path):
+    if placement == "inproc":
+        pytest.skip("an in-process member sends with the dispatcher's limits")
+    dispatcher = kbus.Dispatcher(secrets={"shop": "s", "billing": "b"},
+                                 limits=kbus.Limits(max_route=16))
+    if placement == "unix":
+        address = await dispatcher.listen(f"unix://{tmp_path}/app.sock")
+    else:
+        address = await dispatcher.listen("ws://127.0.0.1:0/bus")
+    seen = []
+
+    async def handler(message, reply):
+        seen.append(message)
+        await reply.send(kbus.Message())
+
+    billing = kbus.Member("billing", secret="b", handler=handler)
+    await billing.connect(address)
+    shop = kbus.Member("shop", secret="s", handler=None)
+    await shop.connect(address)
+    with pytest.raises(kbus.LinkLost):
+        await shop.call("billing." + "x" * 100, kbus.Message())
+    assert seen == []
     await shop.close()
     await billing.close()
     await dispatcher.close()
