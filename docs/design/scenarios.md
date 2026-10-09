@@ -35,7 +35,7 @@ Decisioni fissate dai test:
   chiusa; lo stesso per WebSocket
 
 Suite:
-- `tests/contract/`: membri che si scambiano bytes, tre configurazioni
+- `tests/core/`, `tests/dispatcher/`, `tests/link/`: membri che si scambiano bytes, tre configurazioni
 - `tests/scenarios/`: gateway minimo scritto nei test, client HTTP e WebSocket
   reali, app in altro processo; quattro scenari (GET intero, POST grande, SSE
   chiuso a metà, WebSocket bidirezionale) × tre configurazioni
