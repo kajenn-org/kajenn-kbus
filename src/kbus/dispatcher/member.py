@@ -54,10 +54,12 @@ class Member:
 
     @property
     def name(self) -> str:
+        """The name the member is admitted under."""
         return self._name
 
     @property
     def dispatcher(self) -> Dispatcher | None:
+        """The dispatcher for the members below this one, or ``None``."""
         return self._dispatcher
 
     @property
@@ -79,10 +81,18 @@ class Member:
         return self.connection
 
     def on_reply(self, hook: Callable[[dict], Awaitable[None]]) -> Callable[[dict], Awaitable[None]]:
+        """Register ``hook``, awaited with a copy of the metadata of every reply this
+        member receives or forwards, error replies included, before it goes on.
+        Usable as a decorator."""
         self._reply_hooks.append(hook)
         return hook
 
     async def connect(self, target: Dispatcher | str) -> None:
+        """Connect to ``target`` and be admitted with the name and the secret.
+
+        ``target`` is a ``Dispatcher`` in the same process or its address.
+        Raises ``Rejected`` for an unknown name, a wrong secret or a name in
+        use, and ``Unreachable`` when the address cannot be reached."""
         if isinstance(target, Dispatcher):
             connection, other = pipe(self.limits or target.limits, target.limits)
             target.accept(other)
@@ -98,12 +108,17 @@ class Member:
         self.connection = connection
 
     async def close(self) -> None:
+        """Say goodbye and wait for the dispatcher to close the connection.
+        Does nothing on a closed connection."""
         if self.connected.closed:
             return
         await self.connected.send(make_message({"bye": self.name}, b""))
         await self.connected.wait_closed()
 
     async def call(self, route: str, message: Message) -> Message:
+        """Call ``route`` with ``message`` and return the reply.
+
+        Errors as for ``Connection.call``."""
         try:
             reply = await self.connected.call(self.routed(route, message))
         except Error as exc:
@@ -113,15 +128,19 @@ class Member:
         return reply
 
     async def send(self, route: str, message: Message) -> None:
+        """Send ``message`` to ``route``; no reply."""
         await self.connected.send(self.routed(route, message))
 
     def open(self, route: str, message: Message) -> AbstractAsyncContextManager[Stream]:
+        """Open a stream to ``route`` with ``message``; use it as ``async with``."""
         return self.connected.open(self.routed(route, message))
 
     def routed(self, route: str, message: Message) -> Message:
         return make_message(dict(message.meta, route=route), message.payload)
 
     def route(self, prefix: str) -> RouteProxy:
+        """A proxy calling the exposed methods under ``prefix``:
+        ``await member.route("billing").total(order=4)``."""
         return RouteProxy(self, prefix)
 
     async def observe(self, reply: Message) -> None:

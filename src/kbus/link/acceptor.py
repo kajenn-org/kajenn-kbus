@@ -40,12 +40,14 @@ class LinkAcceptor:
         self._tasks = Tasks()
 
     async def listen(self, url: str, *, ssl=None) -> str:
+        """Accept links at ``url``; return the bound address."""
         listener = await listen(url, limits=self.limits, ssl=ssl).__aenter__()
         self._listeners.append(listener)
         self._tasks.spawn(accept_from(listener, self.accept))
         return listener.address
 
     async def close(self) -> None:
+        """Stop accepting and close every admitted link."""
         for listener in self._listeners:
             await listener.close()
         self._tasks.cancel()

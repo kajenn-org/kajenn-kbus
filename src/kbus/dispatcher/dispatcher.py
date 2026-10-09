@@ -60,26 +60,40 @@ class Dispatcher:
         self._disconnect_hooks: list[Callable[[str, Exception | None], Awaitable[None]]] = []
 
     def on_message(self, hook: Callable[[dict], Awaitable[None]]) -> Callable[[dict], Awaitable[None]]:
+        """Register ``hook``, awaited with a copy of each message's metadata before routing.
+
+        A hook that raises stops the message and the caller gets the error:
+        ``Refused`` for a policy. Usable as a decorator."""
         self._message_hooks.append(hook)
         return hook
 
     def on_disconnect(
         self, hook: Callable[[str, Exception | None], Awaitable[None]]
     ) -> Callable[[str, Exception | None], Awaitable[None]]:
+        """Register ``hook``, awaited with the name and the close reason of each
+        admitted member that disconnects; the reason is ``None`` for an orderly
+        close. Usable as a decorator."""
         self._disconnect_hooks.append(hook)
         return hook
 
     async def listen(self, address: str, *, ssl=None) -> str:
+        """Accept members at ``address`` (``unix://``, ``ws://``, ``wss://`` with ``ssl``).
+
+        Return the bound address."""
         listener = await listen(address, limits=self.limits, ssl=ssl).__aenter__()
         self._listeners.append(listener)
         self._tasks.spawn(accept_from(listener, self.accept))
         return listener.address
 
     def attach_link(self, instance_name: str, link: Any) -> None:
+        """Route ``instance_name:...`` over ``link`` and start it; what arrives on it
+        is served as coming from ``instance_name``."""
         self._links[instance_name] = link
         link.attach(self, instance_name)
 
     def attach_acceptor(self, acceptor: Any) -> None:
+        """Serve the links ``acceptor`` admits; each is reachable as ``<name>:...``,
+        with the name its token maps to."""
         self._acceptors.append(acceptor)
         acceptor.dispatcher = self
 

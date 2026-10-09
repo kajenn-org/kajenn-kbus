@@ -50,6 +50,10 @@ class Stream:
         return self._error is not None or (self._sending_closed and self._peer_closed)
 
     async def send(self, message: Message) -> None:
+        """Send ``message`` in my direction; wait while the window is full.
+
+        Raises the stream's error once it has failed or been aborted, and
+        ``RuntimeError`` after ``close``."""
         if self._sending_closed and self._error is None:
             raise RuntimeError(f"stream {self.id}: my direction is already closed")
         while self._error is None and self._credit <= 0:
@@ -65,6 +69,7 @@ class Stream:
             raise
 
     async def close(self) -> None:
+        """End my direction; the other direction stays open. Does nothing on a finished stream."""
         if self.finished or self._sending_closed:
             return
         await self.write("close", {}, b"")
@@ -72,6 +77,8 @@ class Stream:
         self.settle()
 
     async def abort(self, reason: str) -> None:
+        """End both directions; the other side gets ``Aborted(reason)``.
+        Does nothing on a finished stream."""
         if self.finished:
             return
         self.fail(Aborted(reason))

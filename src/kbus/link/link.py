@@ -68,6 +68,7 @@ class Link:
 
     @property
     def reachable(self) -> bool:
+        """True while the link is connected."""
         return self._connection is not None and not self._connection.closed
 
     @property
@@ -75,14 +76,19 @@ class Link:
         return self._connection if self.reachable else None
 
     async def wait_reachable(self) -> None:
+        """Wait until the link is connected.
+
+        Raises ``Rejected`` when the acceptor refused the token."""
         await self._up.wait()
         if self._rejected is not None:
             raise self._rejected
 
     async def wait_unreachable(self) -> None:
+        """Wait until the link is down."""
         await self._down.wait()
 
     async def close(self) -> None:
+        """Stop the link: the connection is closed and no new attempt follows."""
         if self._task is not None:
             self._task.cancel()
             with contextlib.suppress(asyncio.CancelledError):

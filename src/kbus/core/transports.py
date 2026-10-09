@@ -185,6 +185,9 @@ class Listener:
 
     @property
     def address(self) -> str:
+        """The bound address, with the actual port for ``ws://host:0``.
+
+        Raises ``RuntimeError`` before the listener is entered."""
         if self._address is None:
             raise RuntimeError("the listener is not bound yet: enter it first")
         return self._address

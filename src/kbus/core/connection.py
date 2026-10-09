@@ -41,6 +41,9 @@ class Reply:
         self.sent = False
 
     async def send(self, message: Message) -> None:
+        """Answer with ``message``.
+
+        A call is answered once: a second answer raises ``RuntimeError``."""
         await self.deliver(make_message(dict(message.meta, id=self.id, kind="reply"), message.payload))
 
     async def fail(self, exc: BaseException, meta: dict[str, Any] | None = None) -> None:
@@ -94,9 +97,17 @@ class Connection:
 
     @property
     def closed(self) -> bool:
+        """True once the connection has ended, for any reason."""
         return self._closed
 
     async def call(self, message: Message) -> Message:
+        """Send ``message`` and return the reply.
+
+        Raises ``LinkLost`` on a closed connection or when it drops while the
+        call is pending, and ``Overloaded`` when ``max_pending`` calls are
+        already pending. An error reply is raised: a kbus error as its own
+        class, anything else as ``RemoteError``, with the reply's metadata in
+        ``.meta``. Cancelling the call sends a cancel to the other side."""
         if self.closed:
             raise LinkLost("connection closed")
         if len(self._pending) >= self.limits.max_pending:
@@ -126,6 +137,10 @@ class Connection:
         return make_message(meta, answer.payload)
 
     async def send(self, message: Message) -> None:
+        """Hand ``message`` to the transport: no reply, no delivery confirmation.
+
+        Waits while the transport's write buffer is full. Raises ``LinkLost``
+        on a closed connection."""
         if self.closed:
             raise LinkLost("connection closed")
         id = uuid.uuid4().hex
@@ -133,6 +148,9 @@ class Connection:
 
     @contextlib.asynccontextmanager
     async def open(self, message: Message) -> AsyncIterator[Stream]:
+        """Open a stream with ``message``; use it as ``async with``.
+
+        Leaving the block before the stream is finished aborts it."""
         if self.closed:
             raise LinkLost("connection closed")
         id = uuid.uuid4().hex
@@ -159,11 +177,16 @@ class Connection:
         self._streams.pop(id, None)
 
     async def close(self) -> None:
+        """End the connection: pending calls and open streams get ``LinkLost``,
+        running handlers are cancelled."""
         if not self.closed:
             self._read_task.cancel()
         await self.finish(None)
 
     async def wait_closed(self) -> Exception | None:
+        """Wait until the connection has ended.
+
+        Return the reason, ``None`` for an orderly close."""
         await self._done.wait()
         return self._reason
 
