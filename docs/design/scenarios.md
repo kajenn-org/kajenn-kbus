@@ -128,6 +128,6 @@ la route e consegna; `Hub` scartato.
 
 ## Decisioni di repo (2026-10-09)
 
-- Repo `kajenn-org/kajenn-kbus`, package `kbus`, nome PyPI `kbus` (nessuna release esistente).
+- Repo `kajenn-org/kajenn-kbus`, package `kbus`, nome PyPI `kajenn-kbus`, import `kbus` (deciso 2026-10-09: kbus è un pezzo di kajenn messo a disposizione di chi lo trovasse utile; resta nell'org `kajenn-org` con il prefisso `kajenn-` degli altri pacchetti del progetto).
 - Python ≥3.11, dipendenza runtime solo `websockets>=13`.
 - Nessun import da kajenn, orchestra o genro-*: la libreria è usata da loro, mai il contrario.

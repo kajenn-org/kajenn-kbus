@@ -27,7 +27,7 @@ project = "kbus"
 copyright = "2026, Softwell S.r.l."
 author = "Genropy Team"
 try:
-    release = _pkg_version("kbus")
+    release = _pkg_version("kajenn-kbus")
 except PackageNotFoundError:
     release = "0.0.0.dev0"
 version = release

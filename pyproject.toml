@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "kbus"
+name = "kajenn-kbus"
 version = "0.1.0.dev0"
 description = "Transparent transport of opaque payloads plus inspectable metadata: same process, same machine, other machines"
 readme = "README.md"
@@ -40,7 +40,7 @@ test = [
     "mypy>=1.0",
 ]
 dev = [
-    "kbus[test]",
+    "kajenn-kbus[test]",
     "ruff>=0.1.0",
     "mypy>=1.0",
 ]
