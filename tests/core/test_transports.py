@@ -1,6 +1,8 @@
 import asyncio
+from urllib.parse import urlsplit
 
 import pytest
+from websockets.asyncio.client import connect as ws_connect
 
 import kbus
 
@@ -81,6 +83,27 @@ async def test_payload_bytes_survive_the_wire(pair):
         await reply.send(message)
 
     b.handler = handler
-    reply = await a.call(kbus.Message(meta={"k": "v"}, payload=payload))
+    reply = await a.call(kbus.Message(meta={"k": "v", "op": "è"}, payload=payload))
     assert reply.payload == payload
     assert reply.meta["k"] == "v"
+    assert reply.meta["op"] == "è"
+
+
+async def test_bytes_that_are_not_a_frame_close_the_connection(remote):
+    # 13 bytes, the size of a frame header, with a magic that is not kbus's.
+    garbage = b"XBUS" + bytes(9)
+    async with kbus.core.listen(remote) as listener:
+        if remote.startswith("unix://"):
+            reader, writer = await asyncio.open_unix_connection(urlsplit(listener.address).path)
+            writer.write(garbage)
+            await writer.drain()
+        else:
+            websocket = await ws_connect(listener.address)
+            await websocket.send(garbage)
+        accepted = await anext(aiter(listener))
+        reason = await asyncio.wait_for(accepted.wait_closed(), 5)
+    assert isinstance(reason, kbus.ProtocolError)
+    if remote.startswith("unix://"):
+        writer.close()
+    else:
+        await websocket.close()
