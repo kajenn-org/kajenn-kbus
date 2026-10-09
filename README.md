@@ -79,7 +79,11 @@ conn.handler = handler
 reply = await conn.call(message)          # kbus.Message
 ```
 
-The handler answers with `reply.send(message)` or `reply.fail(exc)`.
+The handler answers with `await reply.send(message)` or
+`await reply.fail(exc, meta=None)`. `meta` travels with the error reply:
+the caller finds it, plus `kind == "error"` and `error` (the exception class
+name), in `.meta` of the exception it gets. A kbus error passed to `fail`
+forwards its own `.meta` by default.
 
 **Send** — one message, no reply.
 
@@ -222,7 +226,8 @@ async def policy(meta: dict) -> None:
 
 @group.on_reply
 async def observe(meta: dict) -> None:
-    ...   # every reply passing through this member, before it goes on
+    ...   # every reply passing through this member, error replies
+    ...   # included (meta["kind"] == "error"), before it goes on
 
 @dispatcher.on_disconnect
 async def gone(name: str, reason: Exception | None) -> None:
@@ -245,7 +250,7 @@ total = await shop.route("billing").total(order=4)
 ```
 
 Unmarked attributes → `kbus.NoSuchRoute`. Exceptions in the method →
-`kbus.RemoteError` with `.type`, `.message`, `.traceback` (text).
+`kbus.RemoteError` with `.type`, `.message`, `.traceback` (text), `.meta`.
 
 ---
 
@@ -279,6 +284,11 @@ Rules:
 
 - `name:route`. A route without `:` is local.
 - Unknown instance name → `kbus.NoSuchInstance`, immediately.
+- One hop only: a route arriving over a link may not name an instance
+  itself; the receiving dispatcher refuses it with `kbus.Refused`.
+- One link per token at a time. A second link presenting the token of a
+  live link is refused and retries with its backoff; it enters once the
+  first link drops.
 - The link reconnects by itself after a drop, with backoff. `link.reachable`
   says whether it is up now. While it is down, calls to that instance fail
   immediately with `kbus.Unreachable`. Nothing is queued.
@@ -295,9 +305,9 @@ Rules:
 
 | Situation | What the caller gets |
 |---|---|
-| Handler raised, or `reply.fail(exc)` | `kbus.RemoteError` |
+| Handler raised, or `reply.fail(exc)` | `kbus.RemoteError`, `.meta` from the error reply |
 | No such member / route / instance | `kbus.NoSuchMember` / `kbus.NoSuchRoute` / `kbus.NoSuchInstance` |
-| Refused by a policy | `kbus.Refused` |
+| Refused by a policy, or an `instance:` route arriving over a link | `kbus.Refused` |
 | Other side disconnected or died while the call was pending | `kbus.LinkLost` |
 | Own connection dropped | `kbus.LinkLost` on every pending call and stream |
 | Instance link down | `kbus.Unreachable` |
