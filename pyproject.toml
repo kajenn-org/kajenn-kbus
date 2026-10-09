@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kajenn-kbus"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Transparent transport of opaque payloads plus inspectable metadata: same process, same machine, other machines"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["asyncio", "ipc", "websocket", "unix-socket", "rpc", "streaming"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",

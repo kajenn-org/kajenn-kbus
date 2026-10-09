@@ -6,7 +6,7 @@
 ## Project-Specific Context
 
 ### Current Status
-- Development Status: Pre-Alpha — Has Implementation: Yes
+- Development Status: Alpha — Has Implementation: Yes
 - Package `kbus`, repo `kajenn-kbus`. Started 2026-10-09 from the design in
   `README.md` and `docs/design/scenarios.md`.
 
