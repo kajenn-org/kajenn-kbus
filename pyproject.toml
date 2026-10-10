@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "kajenn-kbus"
-version = "0.1.0"
+version = "0.1.1"
 description = "Transparent transport of opaque payloads plus inspectable metadata: same process, same machine, other machines"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,6 +36,8 @@ test = [
     "pytest-asyncio>=0.23",
     # tests/scenarios drives a minimal HTTP gateway from a real client.
     "httpx>=0.27",
+    # tests/test_tls.py: a throwaway certificate authority for wss://.
+    "trustme>=1.1",
     "uvicorn>=0.30",
     "mypy>=1.0",
 ]

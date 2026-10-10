@@ -182,6 +182,7 @@ await dispatcher.listen("wss://0.0.0.0:8443/bus", ssl=ctx)
 async def handler(message, reply): ...
 billing = kbus.Member("billing", secret="b-secret", handler=handler)
 await billing.connect("unix:///run/app.sock")   # or connect(dispatcher) in-process
+await billing.connect("wss://app.example:8443/bus", ssl=client_ctx)  # verified with client_ctx
 ```
 
 A **route** is a dotted path. The first segment is a member name. The rest is
@@ -270,7 +271,8 @@ directions.
 
 ```python
 # on the laptop, behind NAT
-link = kbus.Link("gporcari-mac", token=my_token, url="wss://sourcerer.example/link")
+link = kbus.Link("gporcari-mac", token=my_token, url="wss://sourcerer.example/link",
+                 ssl=client_ctx)                # optional: system authorities without it
 dispatcher.attach_link("sourcerer", link)      # routes "sourcerer:..." go here
 ```
 
@@ -388,6 +390,12 @@ grammar, one key per field of `Limits`, and a `link:` section for `Reconnect`.
 | Same process | the `Dispatcher` object, or `kbus.core.pipe()` | in-memory queues; the payload object is passed, not copied |
 | Same machine | `unix:///path/to.sock` | Unix domain socket, length-prefixed frames |
 | Other machine | `ws://host:port/path`, `wss://...` | WebSocket, one frame per binary message, TLS with `wss` |
+
+With `wss://` the listening side passes its certificate as `ssl=` to
+`listen`; the connecting side (`kbus.core.connect`, `Member.connect`, `Link`)
+verifies it with the system's certificate authorities, or with the
+`ssl.SSLContext` it is given as `ssl=` (a private authority, a pinned
+certificate).
 
 Every test in the suite runs on all three. Behaviour is the same; only
 latency differs.

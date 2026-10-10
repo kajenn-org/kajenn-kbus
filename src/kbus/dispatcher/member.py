@@ -16,6 +16,7 @@
 import copy
 from collections.abc import Awaitable, Callable
 from contextlib import AbstractAsyncContextManager
+from ssl import SSLContext
 from typing import Any
 
 from ..core import Connection, Stream, connect, pipe
@@ -87,17 +88,19 @@ class Member:
         self._reply_hooks.append(hook)
         return hook
 
-    async def connect(self, target: Dispatcher | str) -> None:
+    async def connect(self, target: Dispatcher | str, *, ssl: SSLContext | None = None) -> None:
         """Connect to ``target`` and be admitted with the name and the secret.
 
         ``target`` is a ``Dispatcher`` in the same process or its address.
+        ``ssl`` is the context a ``wss://`` address is verified with; without
+        it the system's certificate authorities apply.
         Raises ``Rejected`` for an unknown name, a wrong secret or a name in
         use, and ``Unreachable`` when the address cannot be reached."""
         if isinstance(target, Dispatcher):
             connection, other = pipe(self.limits or target.limits, target.limits)
             target.accept(other)
         else:
-            connection = await connect(target, limits=self.limits)
+            connection = await connect(target, limits=self.limits, ssl=ssl)
         connection.handler = self.handler if self.dispatcher is None else self.serve
         connection.grant_streams = self.dispatcher is None
         try:
