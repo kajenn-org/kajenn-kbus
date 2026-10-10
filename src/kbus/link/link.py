@@ -16,6 +16,7 @@
 import asyncio
 import contextlib
 from dataclasses import dataclass
+from ssl import SSLContext
 from typing import Any
 
 from ..core import Connection, connect
@@ -39,7 +40,8 @@ class Link:
     Its first call carries ``hello`` and ``token``. Messages arriving on it are
     served by the attached dispatcher as coming from the instance name given
     to ``attach_link``. A rejected token stops the link; any other drop is
-    followed by a new attempt.
+    followed by a new attempt. ``ssl`` is the context a ``wss://`` url is
+    verified with; without it the system's certificate authorities apply.
     """
 
     def __init__(
@@ -50,11 +52,13 @@ class Link:
         url: str,
         limits: Limits | None = None,
         reconnect: Reconnect = Reconnect(),
+        ssl: SSLContext | None = None,
     ) -> None:
         self.name = name
         self.token = token
         self.url = url
         self.limits = limits
+        self.ssl = ssl
         self.reconnect = reconnect
         self.dispatcher: Any = None
         self.instance_name: str | None = None
@@ -112,7 +116,7 @@ class Link:
     async def attempt(self) -> bool:
         """Connect once and stay connected until the drop; True when the token was accepted."""
         try:
-            connection = await connect(self.url, limits=self.limits)
+            connection = await connect(self.url, limits=self.limits, ssl=self.ssl)
         except Unreachable:
             return False
         connection.handler = self.serve

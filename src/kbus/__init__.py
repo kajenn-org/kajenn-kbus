@@ -35,7 +35,7 @@ from .limits import Limits
 from .link import Link, LinkAcceptor, Reconnect
 from .message import Message
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "Aborted",
