@@ -278,9 +278,15 @@ class Connection:
         for future in self._pending.values():
             if not future.done():
                 future.set_exception(LinkLost("connection closed while the call was pending"))
-        for task in self._served.values():
+        current_task = asyncio.current_task()
+        tasks = [
+            task for task in (*self._served.values(), *self._stream_tasks)
+            if task is not current_task
+        ]
+        for task in tasks:
             task.cancel()
         for stream in list(self._streams.values()):
             stream.fail(LinkLost("connection closed while the stream was open"))
         await self.transport.close()
+        await asyncio.gather(*tasks, return_exceptions=True)
         self._done.set()
