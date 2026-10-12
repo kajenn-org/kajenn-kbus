@@ -171,6 +171,54 @@ async def test_handler_returning_unfinished_aborts(pair):
             await collect(stream)
 
 
+async def test_connection_close_cancels_and_awaits_stream_handler(pair):
+    a, b = pair
+    started = asyncio.Event()
+    blocked = asyncio.Event()
+    handler_task = None
+    cleaned_up = False
+
+    async def handler(message, stream):
+        nonlocal handler_task, cleaned_up
+        handler_task = asyncio.current_task()
+        started.set()
+        try:
+            await blocked.wait()
+        finally:
+            await asyncio.sleep(0)
+            cleaned_up = True
+
+    b.handler = handler
+    async with a.open(kbus.Message()):
+        await asyncio.wait_for(started.wait(), 1)
+        async with asyncio.timeout(1):
+            await b.close()
+        assert handler_task.done()
+        assert handler_task.cancelled()
+        assert cleaned_up
+
+
+async def test_stream_handler_can_close_its_connection(pair):
+    a, b = pair
+    close = asyncio.Event()
+    handler_task = None
+
+    async def handler(message, stream):
+        nonlocal handler_task
+        handler_task = asyncio.current_task()
+        await close.wait()
+        await b.close()
+
+    b.handler = handler
+    async with a.open(kbus.Message()):
+        close.set()
+        async with asyncio.timeout(1):
+            await b.wait_closed()
+            await handler_task
+        assert handler_task.done()
+        assert not handler_task.cancelled()
+
+
 async def test_connection_drop_gives_link_lost_on_both_sides(pair):
     a, b = pair
     outcome = {}
@@ -179,7 +227,9 @@ async def test_connection_drop_gives_link_lost_on_both_sides(pair):
     async def handler(message, stream):
         try:
             await collect(stream)
-        except kbus.LinkLost:
+        except (kbus.LinkLost, asyncio.CancelledError):
+            with pytest.raises(kbus.LinkLost):
+                await stream.send(kbus.Message())
             outcome["b"] = True
         done.set()
 

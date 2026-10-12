@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue)](https://github.com/kajenn-org/kajenn-kbus/blob/main/pyproject.toml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](https://github.com/kajenn-org/kajenn-kbus/blob/main/LICENSE)
 
-**Status**: Alpha · version 0.1.0.
+**Status**: Alpha · version 0.1.2.
 
 Move messages between parts of an application that may live in the same
 process, in other processes on the same machine, or on other machines. The
@@ -380,14 +380,14 @@ Behaviour at a limit:
 Data larger than one frame goes through a stream, one message per piece.
 
 An application that embeds kbus exposes these parameters in its own
-configuration. kajenn does so with an optional `kbus:` section of the server
-grammar, one key per field of `Limits`, and a `link:` section for `Reconnect`.
+configuration. kajenn configures its dispatcher with `server.kbus(...)`
+(address, certfile/keyfile/cafile, the `Limits` fields).
 
 ## Transports and addresses
 
 | Placement | Address | Transport |
 |---|---|---|
-| Same process | the `Dispatcher` object, or `kbus.core.pipe()` | in-memory queues; the payload object is passed, not copied |
+| Same process | the `Dispatcher` object, or `kbus.core.pipe()` | in-memory queues; payload and metadata objects are passed, not copied; handlers must treat received `meta` as read-only (copy it before changing it) |
 | Same machine | `unix:///path/to.sock` | Unix domain socket, length-prefixed frames |
 | Other machine | `ws://host:port/path`, `wss://...` | WebSocket, one frame per binary message, TLS with `wss` |
 

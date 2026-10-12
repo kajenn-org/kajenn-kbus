@@ -33,7 +33,11 @@ from .frame import HEADER, FrameCodec
 
 
 class PipeTransport:
-    """One end of an in-memory pipe: an inbox, the peer's inbox, own limits."""
+    """One end of an in-memory pipe: an inbox, the peer's inbox, own limits.
+
+    Payload and metadata objects are passed, not copied; handlers must treat
+    received ``meta`` as read-only (copy it before changing it).
+    """
 
     def __init__(
         self, inbox: "asyncio.Queue[Message | None]", outbox: "asyncio.Queue[Message | None]", limits: Limits
